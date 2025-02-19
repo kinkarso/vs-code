@@ -1,39 +1,35 @@
-# Use latest stable Ubuntu (24.04 LTS). If not available, use 22.04 LTS.
-FROM ubuntu:24.04
+# Use a modern Ubuntu desktop image with VNC/noVNC from accetto (Ubuntu Jammy)
+FROM accetto/ubuntu-desktop-vnc:jammy
 
-# Disable interactive prompts during package installs
+# Switch to root for package installations.
+USER root
+
+# Set non-interactive apt environment
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Xfce desktop, X11/VNC components, noVNC, and utilities (no display manager).
-# Also install VS Code (latest stable) and clean up to reduce image size.
+# Update apt and install prerequisites.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    xfce4 xfce4-terminal dbus-x11 x11vnc xvfb \ 
-    novnc python3-websockify python3-numpy \ 
-    fonts-dejavu-core ca-certificates curl wget gpg apt-transport-https \ 
- && wget -qO /tmp/vscode.deb https://go.microsoft.com/fwlink/?LinkID=760868 \ 
- && echo "code code/add-microsoft-repo boolean true" | debconf-set-selections \ 
- && apt-get install -y /tmp/vscode.deb \ 
- && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/vscode.deb
+    wget gnupg2 software-properties-common apt-transport-https curl
 
-# Create an "ubuntu" user with sudo privileges for the desktop session
-RUN useradd -m -s /bin/bash ubuntu && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu
+# Add Microsoft GPG key and VS Code repository.
+RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/microsoft.gpg && \
+    echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
 
-# Set environment variables for display and default noVNC port
-ENV DISPLAY=:0 PORT=6080
+# Update apt and install VS Code along with its required libraries.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    code libgtk-3-0 libxss1 libxkbfile1 libsecret-1-0 libnss3 libasound2 libgbm1 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Expose VNC and noVNC ports
+# Create the 'ubuntu' user if it doesn't already exist.
+RUN id ubuntu || (useradd -m -s /bin/bash ubuntu && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu)
+
+# Expose ports: VNC on 5900 and noVNC (web) on 6080.
 EXPOSE 5900 6080
 
-# Switch to the ubuntu user for running the desktop environment
+# Switch to the non-root 'ubuntu' user.
 USER ubuntu
+ENV DISPLAY=:0
 
-# Command to start all required services (Xvfb, Xfce, x11vnc, websockify/noVNC)
-# - Starts Xvfb on display :0 with a virtual screen.
-# - Launches Xfce session on that display.
-# - Runs x11vnc server (no password by default, for simplicity).
-# - Runs websockify to serve noVNC on $PORT (defaults to 6080).
+# CMD: Start the virtual display (Xvfb), launch the Xfce desktop, then start x11vnc and websockify (for noVNC).
 CMD bash -c "\
-    Xvfb :0 -screen 0 1920x1080x24 & \
-    sleep 1 && DISPLAY=:0 startxfce4 & \
-    sleep 2 && x11vnc -forever -nopw -shared -display :0 -rfbport 5900 & \
-    websockify --web=/usr/share/novnc/ \$PORT localhost:5900"
+    Xvfb :0 -screen 0 1920x1080
