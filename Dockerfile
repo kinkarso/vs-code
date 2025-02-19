@@ -1,23 +1,34 @@
 # Use a prebuilt image that provides an Ubuntu desktop with XFCE, VNC, and noVNC.
 FROM consol/ubuntu-xfce-vnc
 
-# Switch to root to install packages.
 USER root
 
 # Update apt and install prerequisites.
 RUN apt-get update && \
-    apt-get install -y wget gnupg2 software-properties-common apt-transport-https
+    apt-get install -y curl gnupg2 software-properties-common apt-transport-https
 
-# Download and install the latest stable VS Code .deb package directly.
-RUN wget -O /tmp/code.deb "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64" && \
-    dpkg -i /tmp/code.deb || apt-get -f install -y && \
+# Install common VS Code dependencies (if not already in the base image)
+RUN apt-get update && apt-get install -y \
+    libasound2 \
+    libgtk-3-0 \
+    libxss1 \
+    libxkbfile1 \
+    libsecret-1-0 \
+    libnss3 \
+    libgbm1
+
+# Download the latest stable VS Code .deb package using curl.
+RUN curl -L -o /tmp/code.deb "https://update.code.visualstudio.com/latest/linux-deb-x64/stable" && \
+    ls -l /tmp/code.deb
+
+# Install VS Code; if there are dependency issues, fix them automatically.
+RUN dpkg -i /tmp/code.deb || apt-get -f install -y && \
     rm /tmp/code.deb
 
-# Clean up apt cache to reduce image size.
+# Clean up apt cache.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Expose the VNC (5901) and noVNC (6080) ports.
+# Expose the ports for VNC and noVNC.
 EXPOSE 5901 6901
 
-# Do NOT override the CMD.
-# The base image already includes an ENTRYPOINT that starts the desktop environment.
+# Use the base image's startup script (do not override CMD).
