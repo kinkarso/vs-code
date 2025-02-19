@@ -4,7 +4,7 @@ FROM ubuntu:24.04
 # Disable interactive prompts during package installs.
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Xfce desktop, X11/VNC components, noVNC, and utilities.
+# Install Xfce desktop, X11/VNC components, noVNC, VS Code, and utilities.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     xfce4 xfce4-terminal dbus-x11 x11vnc xvfb \
     novnc python3-websockify python3-numpy \
@@ -14,9 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get install -y /tmp/vscode.deb && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/vscode.deb
 
-# Install Google Chrome stable.
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+# Install Google Chrome stable using the new keyring method.
+RUN wget -qO- https://dl.google.com/linux/linux_signing_key.pub | \
+    gpg --dearmor -o /usr/share/keyrings/google-linux-signing-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-signing-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+    > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update && apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -32,13 +34,12 @@ RUN echo "root:12345" | chpasswd
 # Switch to the ubuntu user.
 USER ubuntu
 
-# Install NVM and the latest Node.js.
-# This installs NVM into /home/ubuntu/.nvm, uses it to install Node, and adds sourcing of nvm to .bashrc.
+# Install NVM and the latest Node.js for the ubuntu user.
 ENV NVM_DIR=/home/ubuntu/.nvm
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash && \
     bash -c "source $NVM_DIR/nvm.sh && nvm install node && nvm alias default node" && \
     echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bashrc && \
-    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Load nvm' >> ~/.bashrc
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # Load nvm' >> ~/.bashrc
 
 # Start all required services.
 CMD bash -c "\
