@@ -1,33 +1,39 @@
-# Use latest Ubuntu LTS (24.04 “Noble Numbat”). Use 22.04 (Jammy) if 24.04 is not available.
+# Use latest stable Ubuntu (24.04 LTS). If not available, use 22.04 LTS.
 FROM ubuntu:24.04
 
-# Disable interactive prompts and upgrade base packages
-ENV DEBIAN_FRONTEND=noninteractive 
-RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends \
-    # Install Xfce desktop and X11 components
-    xfce4 xfce4-terminal dbus-x11 x11-xserver-utils x11vfb x11vnc \
-    # Install noVNC and websockify for browser-based VNC
-    novnc websockify \
-    # Install tools for adding VS Code repository
-    wget gnupg2 ca-certificates \
-    # Add Microsoft GPG key and VS Code repository
- && wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg \
- && install -o root -g root -m 644 microsoft.gpg /etc/apt/keyrings/microsoft.gpg && rm microsoft.gpg \
- && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list \
- && apt-get update \
-    # Install VS Code and its dependencies
- && apt-get install -y --no-install-recommends code libgtk-3-0 libxss1 libxkbfile1 libsecret-1-0 libnss3 libasound2 libgbm1 \
-    # Clean up apt caches to reduce image size
- && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Disable interactive prompts during package installs
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Copy and set up startup script
-COPY startup.sh /usr/local/bin/startup.sh
-RUN chmod +x /usr/local/bin/startup.sh
+# Install Xfce desktop, X11/VNC components, noVNC, and utilities (no display manager).
+# Also install VS Code (latest stable) and clean up to reduce image size.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xfce4 xfce4-terminal dbus-x11 x11vnc xvfb \ 
+    novnc python3-websockify python3-numpy \ 
+    fonts-dejavu-core ca-certificates curl wget gpg apt-transport-https \ 
+ && wget -qO /tmp/vscode.deb https://go.microsoft.com/fwlink/?LinkID=760868 \ 
+ && echo "code code/add-microsoft-repo boolean true" | debconf-set-selections \ 
+ && apt-get install -y /tmp/vscode.deb \ 
+ && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/vscode.deb
 
-# Switch to the default non-root user for the desktop session (UID 1000)
-USER ubuntu
-# Ensure the DISPLAY environment is set for X11
-ENV DISPLAY=:0
+# Create an "ubuntu" user with sudo privileges for the desktop session
+RUN useradd -m -s /bin/bash ubuntu && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu
+
+# Set environment variables for display and default noVNC port
+ENV DISPLAY=:0 PORT=6080
 
 # Expose VNC and noVNC ports
 EXPOSE 5900 6080
+
+# Switch to the ubuntu user for running the desktop environment
+USER ubuntu
+
+# Command to start all required services (Xvfb, Xfce, x11vnc, websockify/noVNC)
+# - Starts Xvfb on display :0 with a virtual screen.
+# - Launches Xfce session on that display.
+# - Runs x11vnc server (no password by default, for simplicity).
+# - Runs websockify to serve noVNC on $PORT (defaults to 6080).
+CMD bash -c "\
+    Xvfb :0 -screen 0 1920x1080x24 & \
+    sleep 1 && DISPLAY=:0 startxfce4 & \
+    sleep 2 && x11vnc -forever -nopw -shared -display :0 -rfbport 5900 & \
+    websockify --web=/usr/share/novnc/ \$PORT localhost:5900"
