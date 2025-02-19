@@ -32,4 +32,9 @@ ENV DISPLAY=:0
 
 # CMD: Start the virtual display (Xvfb), launch the Xfce desktop, then start x11vnc and websockify (for noVNC).
 CMD bash -c "\
-    Xvfb :0 -screen 0 1920x1080
+    Xvfb :0 -screen 0 1920x1080x24 & \
+    sleep 2 && \
+    startxfce4 & \
+    sleep 5 && \
+    x11vnc -display :0 -rfbport 5900 -forever -nopw -shared & \
+    websockify --web=/usr/share/novnc/ \$PORT localhost:5900"
