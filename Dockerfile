@@ -4,10 +4,10 @@ FROM ubuntu:24.04
 # Disable interactive prompts during package installs.
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Xfce desktop, X11/VNC components, noVNC, VS Code, and utilities.
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Update package lists, upgrade installed packages, and install XFCE desktop, X11/VNC components, noVNC, VS Code, Python3, pip3, and other utilities.
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     xfce4 xfce4-terminal dbus-x11 x11vnc xvfb \
-    novnc python3-websockify python3-numpy \
+    novnc python3 python3-pip python3-websockify python3-numpy \
     fonts-dejavu-core ca-certificates curl wget gpg apt-transport-https && \
     wget -qO /tmp/vscode.deb "https://go.microsoft.com/fwlink/?LinkID=760868" && \
     echo "code code/add-microsoft-repo boolean true" | debconf-set-selections && \
@@ -21,6 +21,9 @@ RUN wget -qO- https://dl.google.com/linux/linux_signing_key.pub | \
     > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update && apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install pydantic globally using pip3.
+RUN pip3 install --no-cache-dir pydantic
 
 # Set environment variables for display.
 ENV DISPLAY=:0
