@@ -1,7 +1,7 @@
 # Use a prebuilt image that provides an Ubuntu desktop with XFCE, VNC, and noVNC.
 FROM consol/ubuntu-xfce-vnc
 
-# Switch to root to install packages.
+# Switch to root so we can install packages.
 USER root
 
 # Update apt and install prerequisites.
@@ -20,5 +20,5 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Expose the VNC and noVNC ports.
 EXPOSE 5901 6080
 
-# Use the base image's startup script to launch the desktop environment.
+# Start the desktop environment (XFCE, VNC, noVNC) using the base image's startup script.
 CMD ["/startup.sh"]
