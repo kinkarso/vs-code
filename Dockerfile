@@ -15,29 +15,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get install -y /tmp/vscode.deb && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/vscode.deb
 
-# Set environment variables for display and noVNC port
+# Set environment variables for display.
 ENV DISPLAY=:0
 
-# Expose VNC and noVNC ports
+# Expose VNC (5900) and noVNC (6080) ports.
 EXPOSE 5900 6080
 
+# Set root password so you can use 'su -'
+RUN echo "root:12345" | chpasswd
+
 # Switch to the ubuntu user for running the desktop environment.
-# (This container uses the default root user; if you need a non-root user, you can add one.)
 USER ubuntu
 
 # Start all required services via CMD:
-# - Start Xvfb on display :0
-# - Launch Xfce desktop
-# - Start x11vnc (VNC server) on port 5900
-# - Start websockify to serve noVNC on port 6080, serving the noVNC files from /usr/share/novnc/
+# - Start Xvfb on display :0.
+# - Launch the Xfce desktop.
+# - Start x11vnc (VNC server) on port 5900.
+# - Start websockify to serve noVNC on port 6080.
 CMD bash -c "\
     echo 'Starting Xvfb...' && \
     Xvfb :0 -screen 0 1920x1080x24 & \
-    sleep 5 && \
-    echo 'Starting Xfce...' && \
-    startxfce4 & \
-    sleep 10 && \
+    sleep 1 && \
+    DISPLAY=:0 startxfce4 & \
+    sleep 2 && \
     echo 'Starting x11vnc...' && \
-    x11vnc -display :0 -rfbport 5900 -forever -nopw -shared & \
+    x11vnc -forever -nopw -shared -display :0 -rfbport 5900 & \
     echo 'Starting websockify on port 6080...' && \
-    websockify 6080 localhost:5900 --web=/usr/share/novnc/"
+    websockify --web=/usr/share/novnc/ 6080 localhost:5900"
