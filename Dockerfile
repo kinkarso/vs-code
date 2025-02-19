@@ -11,10 +11,10 @@ RUN apt-get update && \
 # Download the latest stable VS Code .deb package directly.
 RUN wget -O /tmp/code.deb "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64" && \
     apt-get update && \
-    apt-get install -y ./tmp/code.deb && \
+    apt-get install -y /tmp/code.deb && \
     rm /tmp/code.deb
 
-# Clean up apt cache to reduce image size.
+# (Optional) Clean up apt cache to reduce image size.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Expose the VNC (5901) and noVNC (6080) ports.
