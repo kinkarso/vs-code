@@ -17,7 +17,7 @@ RUN wget -O /tmp/code.deb "https://code.visualstudio.com/sha/download?build=stab
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Expose the VNC (5901) and noVNC (6080) ports.
-EXPOSE 5901 6080
+EXPOSE 5901 6901
 
 # Do NOT override the CMD.
 # The base image already includes an ENTRYPOINT that starts the desktop environment.
