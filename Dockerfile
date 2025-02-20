@@ -4,11 +4,12 @@ FROM ubuntu:24.04
 # Disable interactive prompts during package installs.
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update package lists, upgrade installed packages, and install XFCE desktop, X11/VNC components, noVNC, VS Code, Python3, pip3,
+# Update package lists, upgrade installed packages, and install XFCE desktop, X11/VNC components, VS Code, Python3, pip3,
 # python3-venv (for virtual environments), additional build tools (build-essential and python3-dev), and other utilities.
+# (Note: Removed novnc from apt install.)
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     xfce4 xfce4-terminal dbus-x11 x11vnc xvfb \
-    novnc python3 python3-pip python3-venv python3-websockify python3-numpy \
+    python3 python3-pip python3-venv python3-websockify python3-numpy \
     fonts-dejavu-core ca-certificates curl wget gpg apt-transport-https \
     build-essential python3-dev && \
     wget -qO /tmp/vscode.deb "https://go.microsoft.com/fwlink/?LinkID=760868" && \
@@ -23,6 +24,10 @@ RUN wget -qO- https://dl.google.com/linux/linux_signing_key.pub | \
     > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update && apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Download and install noVNC (use a known working version from GitHub).
+RUN wget -qO- https://github.com/novnc/noVNC/archive/refs/tags/v1.3.0.tar.gz | tar -xz -C /usr/share && \
+    mv /usr/share/noVNC-1.3.0 /usr/share/novnc
 
 # Create a Python virtual environment and install pydantic inside it.
 RUN python3 -m venv /venv && \
