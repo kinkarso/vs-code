@@ -24,6 +24,9 @@ RUN wget -qO- https://dl.google.com/linux/linux_signing_key.pub | \
     apt-get update && apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Allow pip to install packages in the externally managed environment.
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
 # Install pydantic globally using pip3.
 RUN pip3 install --no-cache-dir pydantic
 
