@@ -23,9 +23,9 @@ RUN wget -qO- https://dl.google.com/linux/linux_signing_key.pub | \
     apt-get update && apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Download and install noVNC (using v1.2.0 to avoid the dragThreshold error).
-RUN wget -qO- https://github.com/novnc/noVNC/archive/refs/tags/v1.2.0.tar.gz | tar -xz -C /usr/share && \
-    mv /usr/share/noVNC-1.2.0 /usr/share/novnc
+# Download and install noVNC (use a known working version from GitHub).
+RUN wget -qO- https://github.com/novnc/noVNC/archive/refs/tags/v1.3.0.tar.gz | tar -xz -C /usr/share && \
+    mv /usr/share/noVNC-1.3.0 /usr/share/novnc
 
 # Create a Python virtual environment and install pydantic inside it.
 RUN python3 -m venv /venv && \
@@ -56,13 +56,13 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | b
 
 # Start all required services and launch Chrome with custom flags.
 CMD bash -c "\
-    echo 'Starting Xvfb with high resolution (3840x2160)...' && \
-    Xvfb :0 -screen 0 3840x2160x24 & \
+    echo 'Starting Xvfb with high resolution (3200×1800)...' && \
+    Xvfb :0 -screen 0 3200×1800x24 & \
     sleep 1 && \
     DISPLAY=:0 startxfce4 & \
     sleep 2 && \
-    echo 'Starting x11vnc with scaling (scale factor 0.45)...' && \
-    x11vnc -forever -nopw -shared -display :0 -rfbport 5900 -scale 0.45 & \
+    echo 'Starting x11vnc with scaling (scale factor 0.5)...' && \
+    x11vnc -forever -nopw -shared -display :0 -rfbport 5900 -scale 0.5 & \
     echo 'Launching Google Chrome with custom flags...' && \
     google-chrome-stable --no-sandbox --disable-gpu --disable-dev-shm-usage --disable-software-rasterizer & \
     echo 'Starting websockify on port 6080...' && \
