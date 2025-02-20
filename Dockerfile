@@ -24,11 +24,15 @@ RUN wget -qO- https://dl.google.com/linux/linux_signing_key.pub | \
     apt-get update && apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Allow pip to install packages in the externally managed environment.
-ENV PIP_BREAK_SYSTEM_PACKAGES=1
+# Create a virtual environment to isolate Python package installations.
+RUN python3 -m venv /venv && \
+    /venv/bin/pip install --upgrade pip
 
-# Install pydantic globally using pip3.
-RUN pip3 install --no-cache-dir pydantic
+# Install pydantic in the virtual environment.
+RUN /venv/bin/pip install --no-cache-dir pydantic
+
+# Update PATH so that the virtual environment’s python and pip take precedence.
+ENV PATH="/venv/bin:$PATH"
 
 # Set environment variables for display.
 ENV DISPLAY=:0
