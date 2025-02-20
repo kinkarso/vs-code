@@ -51,14 +51,17 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | b
     echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bashrc && \
     echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # Load nvm' >> ~/.bashrc
 
-# Start all required services.
+# Start all required services and launch Chrome with custom flags.
 CMD bash -c "\
-    echo 'Starting Xvfb...' && \
-    Xvfb :0 -screen 0 1920x1080x24 & \
+    echo 'Starting Xvfb with high resolution (3840x2160)...' && \
+    Xvfb :0 -screen 0 3840x2160x24 & \
     sleep 1 && \
     DISPLAY=:0 startxfce4 & \
     sleep 2 && \
-    echo 'Starting x11vnc...' && \
-    x11vnc -forever -nopw -shared -display :0 -rfbport 5900 & \
+    echo 'Starting x11vnc with scaling (scale factor 0.45)...' && \
+    x11vnc -forever -nopw -shared -display :0 -rfbport 5900 -scale 0.45 & \
+    echo 'Launching Google Chrome with custom flags...' && \
+    google-chrome-stable --no-sandbox --disable-gpu --disable-dev-shm-usage --disable-software-rasterizer & \
     echo 'Starting websockify on port 6080...' && \
-    websockify --web=/usr/share/novnc/ 6080 localhost:5900"
+    websockify --web=/usr/share/novnc/ 6080 localhost:5900 && \
+    wait"
