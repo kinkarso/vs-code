@@ -53,9 +53,11 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | b
 
 # Start all required services.
 CMD bash -c "\
-    echo 'Starting Xvfb with resolution 3200x1800...' && \
-    Xvfb :0 -screen 0 3200x1800x24 & \
+    echo 'Starting Xvfb with resolution 3200x1800 and DPI 120...' && \
+    Xvfb :0 -screen 0 3200x1800x24 -dpi 120 & \
     sleep 1 && \
+    echo 'Merging X resources to set Xft.dpi to 120...' && \
+    echo 'Xft.dpi: 120' | xrdb -merge && \
     DISPLAY=:0 startxfce4 & \
     sleep 2 && \
     echo 'Starting x11vnc with scaling (scale factor 0.5)...' && \
