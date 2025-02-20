@@ -60,7 +60,7 @@ CMD bash -c "\
     echo 'Xft.dpi: 120' | xrdb -merge && \
     DISPLAY=:0 startxfce4 & \
     sleep 2 && \
-    echo 'Starting x11vnc with scaling (scale factor 0.5)...' && \
-    x11vnc -forever -nopw -shared -display :0 -rfbport 5900 -scale 0.5 & \
+    echo 'Starting x11vnc with scaling (scale factor 0.75)...' && \
+    x11vnc -forever -nopw -shared -display :0 -rfbport 5900 -scale 0.75 & \
     echo 'Starting websockify on port 6080...' && \
     websockify --web=/usr/share/novnc/ 6080 localhost:5900"
